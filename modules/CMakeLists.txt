@@ -53,6 +53,7 @@ add_subdirectory(AngleNet)
 add_subdirectory(CrnnNet)
 add_subdirectory(OcrLite)
 add_subdirectory(EXE)
+add_subdirectory(Test)
 
 install(DIRECTORY 
             ${OnnxRuntime_SOURCE_DIR}/windows-x86/bin/ 
