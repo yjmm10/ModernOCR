@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 
 project(modules VERSION 0.1.0)
 
+# PackageProject
+CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+
 # OpenCV
 CPMaddPackage(NAME OpenCV
     VERSION 3.4.13
