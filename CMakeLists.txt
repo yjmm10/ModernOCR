@@ -12,7 +12,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 else ()
     add_definitions("-Wall")
 endif ()
+# 去除提醒
+add_definitions(-w)
 
-include_directories(${CMAKE_SOURCE_DIR}/ocr)
+include_directories(${CMAKE_SOURCE_DIR}/modules)
 
 add_subdirectory(modules)
