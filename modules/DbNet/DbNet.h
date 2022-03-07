@@ -1,3 +1,12 @@
+/*
+ * @Author: Petrichor
+ * @Date: 2022-03-07 17:27:29
+ * @LastEditTime: 2022-03-07 17:44:40
+ * @LastEditors: Petrichor
+ * @Description:  
+ * @FilePath: \ModernOCR\modules\DbNet\DbNet.h
+ * 版权声明
+ */
 #ifndef __OCR_DBNET_H__
 #define __OCR_DBNET_H__
 
