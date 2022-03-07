@@ -53,3 +53,8 @@ add_subdirectory(AngleNet)
 add_subdirectory(CrnnNet)
 add_subdirectory(OcrLite)
 add_subdirectory(EXE)
+
+install(DIRECTORY 
+            ${OnnxRuntime_SOURCE_DIR}/windows-x86/bin/ 
+        DESTINATION bin 
+            PATTERN ".dll")
