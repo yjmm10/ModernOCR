@@ -1,7 +1,18 @@
 #include "DbNet.h"
 #include "utils/OcrUtils.h"
-
-DbNet::DbNet() {}
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+using namespace spdlog;
+DbNet::DbNet() {
+    log = spdlog::get("DbNet");
+    if(log==nullptr)
+    {
+        log = spdlog::basic_logger_mt("DbNet", "logs/ModernOCR.txt");
+        log->info("Create DbNet logs!");
+    }else{
+        log->info("Load DbNet logs!");
+    }
+}
 
 DbNet::~DbNet() {
     delete session;
@@ -31,23 +42,32 @@ void DbNet::setNumThread(int numOfThread) {
 }
 
 void DbNet::initModel(const std::string &pathStr) {
+try
+{
 #ifdef _WIN32
     std::wstring dbPath = strToWstr(pathStr);
     session = new Ort::Session(env, dbPath.c_str(), sessionOptions);
 #else
     session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
 #endif
+    log->info("DbNet successfully loaded!");
+}
+catch(const std::exception& e)
+{
+    SPDLOG_LOGGER_ERROR(log,e.what());
+}
     getInputName(session, inputName);
     getOutputName(session, outputName);
 }
 
-std::vector<TextBox> findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, ScaleParam &s,
+inline std::vector<TextBox> DbNet::findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, ScaleParam &s,
                                  const float boxScoreThresh, const float unClipRatio) {
     float minArea = 3;
     std::vector<TextBox> rsBoxes;
     rsBoxes.clear();
     std::vector<std::vector<cv::Point>> contours;
     findContours(norfMapMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+    log->info("Find {} Contours!",123);
     for (unsigned int i = 0; i < contours.size(); ++i) {
         float minSideLen, perimeter;
         std::vector<cv::Point> minBox = getMinBoxes(contours[i], minSideLen, perimeter);
@@ -81,7 +101,15 @@ std::vector<TextBox> findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapM
 std::vector<TextBox>
 DbNet::getTextBoxes(cv::Mat &src, ScaleParam &s, float boxScoreThresh, float boxThresh, float unClipRatio) {
     cv::Mat srcResize;
-    resize(src, srcResize, cv::Size(s.dstWidth, s.dstHeight));
+    try
+    {
+        resize(src, srcResize, cv::Size(s.dstWidth, s.dstHeight));
+        log->info("Resize images from ({}, {}) to ({}, {}).",src.cols,src.rows,s.dstWidth,s.dstHeight);
+    }
+    catch(const std::exception& e)
+    {
+        SPDLOG_LOGGER_ERROR(log,e.what());
+    }
     std::vector<float> inputTensorValues = substractMeanNormalize(srcResize, meanValues, normValues);
     std::array<int64_t, 4> inputShape{1, srcResize.channels(), srcResize.rows, srcResize.cols};
     auto memoryInfo = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);

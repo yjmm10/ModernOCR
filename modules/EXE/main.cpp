@@ -5,6 +5,11 @@
 #include "version.h"
 #include "OcrLite/OcrLite.h"
 #include "utils/OcrUtils.h"
+#include <iostream>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+using namespace spdlog;
 
 void printHelp(FILE *out, char *argv0) {
     fprintf(out, " ------- Usage -------\n");
@@ -25,6 +30,9 @@ int main(int argc, char **argv) {
         printHelp(stderr, argv[0]);
         return -1;
     }
+
+    auto my_logger = spdlog::basic_logger_mt("basic_logger", "logs/basic-log.txt");
+    my_logger->info("spdlog is very easy to use!");
     std::string modelsDir, modelDetPath, modelClsPath, modelRecPath, keysPath;
     std::string imgPath, imgDir, imgName;
     int numThread = 4;

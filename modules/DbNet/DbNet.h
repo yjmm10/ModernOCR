@@ -1,19 +1,19 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 17:27:29
- * @LastEditTime: 2022-03-07 17:44:40
+ * @LastEditTime: 2022-03-08 17:33:47
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\DbNet\DbNet.h
  * 版权声明
  */
-#ifndef __OCR_DBNET_H__
-#define __OCR_DBNET_H__
+#ifndef __DBNET_H__
+#define __DBNET_H__
 
 #include "utils/OcrStruct.h"
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
-
+#include <spdlog/spdlog.h>
 class DbNet {
 public:
     DbNet();
@@ -34,10 +34,13 @@ private:
     int numThread = 0;
     char *inputName;
     char *outputName;
+    std::shared_ptr<spdlog::logger> log;
+    inline std::vector<TextBox> findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, ScaleParam &s,
+                                 const float boxScoreThresh, const float unClipRatio);
 
     const float meanValues[3] = {float(0.485 * 255), float(0.456 * 255), float(0.406 * 255)};
     const float normValues[3] = {float(1.0 / 0.229f / 255.0), float(1.0 / 0.224 / 255.0), float(1.0 / 0.225 / 255.0)};
 };
 
 
-#endif //__OCR_DBNET_H__
+#endif //__DBNET_H__
