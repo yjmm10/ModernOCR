@@ -2,12 +2,14 @@ cmake_minimum_required(VERSION 3.14)
 
 project(Test VERSION 0.1.0)
 
+
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRCS)
 add_executable(${PROJECT_NAME} ${SRCS})
 
-# set(LIBS utils DbNet CrnnNet AngleNet OcrLite)
-# target_link_libraries(${PROJECT_NAME} 
-#     PUBLIC ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${LIBS} ${OpenMP_CXX_LIB_NAMES})
+# set(INTER_LIBS )
+set(OUTER_LIBS spdlog)
+target_link_libraries(${PROJECT_NAME} 
+    PUBLIC ${OUTER_LIBS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

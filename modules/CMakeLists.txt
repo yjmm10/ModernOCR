@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.14)
 project(modules VERSION 0.1.0)
 
 # PackageProject
-CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+# CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+CPMAddPackage("gh:gabime/spdlog@1.9.2")
 
 # OpenCV
 CPMaddPackage(NAME OpenCV
@@ -48,12 +49,31 @@ else ()
 endif (OnnxRuntime_FOUND)
 
 add_subdirectory(utils)
-add_subdirectory(DbNet)
-add_subdirectory(AngleNet)
-add_subdirectory(CrnnNet)
-add_subdirectory(OcrLite)
-add_subdirectory(EXE)
-add_subdirectory(Test)
+
+# if(BUILD_TEST)
+#     add_subdirectory(Test)
+# else(BUILD_TEST)
+    if(BUILD_DbNet)
+        message(STATUS "BUILD AngleNet is ON")
+        add_subdirectory(DbNet)
+    endif()
+
+    if (BUILD_AngleNet)
+        message(STATUS "BUILD AngleNet is ON")    
+        add_subdirectory(AngleNet)
+    endif()
+
+    if (BUILD_AngleNet)
+        message(STATUS "BUILD CrnnNet is ON")    
+        add_subdirectory(CrnnNet)
+    endif()
+
+    add_subdirectory(OcrLite)
+    add_subdirectory(EXE)
+# endif(BUILD_TEST)
+
+
+
 
 install(DIRECTORY 
             ${OnnxRuntime_SOURCE_DIR}/windows-x86/bin/ 

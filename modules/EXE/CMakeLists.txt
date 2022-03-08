@@ -3,13 +3,12 @@ cmake_minimum_required(VERSION 3.14)
 project(EXE VERSION 0.1.0)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRCS)
-message("源代码文件为${SRCS}")
 add_executable(${PROJECT_NAME} ${SRCS})
 
-set(LIBS utils DbNet CrnnNet AngleNet OcrLite)
-message("引用库为${LIBS}")
+set(INTER_LIBS  utils DbNet CrnnNet AngleNet OcrLite)
+set(OUTER_LIBS spdlog ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${LIBS} ${OpenMP_CXX_LIB_NAMES})
+    PUBLIC ${OUTER_LIBS} ${INTER_LIBS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
