@@ -4,6 +4,10 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "utils/operators.h"
+
+// test
+#include <string>
 
 OcrLite::OcrLite() {}
 
@@ -76,17 +80,49 @@ OcrResult OcrLite::detect(const char *path, const char *imgName,
     cv::Mat bgrSrc = imread(imgFile, cv::IMREAD_COLOR);//default : BGR
     cv::Mat originSrc;
     cvtColor(bgrSrc, originSrc, cv::COLOR_BGR2RGB);// convert to RGB
-    int originMaxSide = (std::max)(originSrc.cols, originSrc.rows);
-    int resize;
-    if (maxSideLen <= 0 || maxSideLen > originMaxSide) {
-        resize = originMaxSide;
-    } else {
-        resize = maxSideLen;
-    }
-    resize += 2*padding;
+
+    // 边界填充之后增加获取比例
+    cv::Mat dst_padding,dst_resize;
+    op::SetPadding(originSrc,dst_padding,padding);
+    std::vector<float> ratio_wh;
+    op::ResizeByMaxSide(dst_padding,dst_resize,maxSideLen,ratio_wh);
+    
+
+    // int originMaxSide = (std::max)(originSrc.cols, originSrc.rows);
+    // int resize;
+    // if (maxSideLen <= 0 || maxSideLen > originMaxSide) {
+    //     resize = originMaxSide;
+    // } else {
+    //     resize = maxSideLen;
+    // }
+    // resize += 2*padding;
     cv::Rect paddingRect(padding, padding, originSrc.cols, originSrc.rows);
-    cv::Mat paddingSrc = makePadding(originSrc, padding);
-    ScaleParam scale = getScaleParam(paddingSrc, resize);
+    // Logger("rect x %d y %d",paddingRect.x,paddingRect.y);
+    // double startTime = getCurrentTime();
+
+
+    // double dbNetTime = getCurrentTime() - startTime;
+    // Logger("dbNetTime(%fms)\n", dbNetTime);
+    
+    
+    // startTime = getCurrentTime();
+    
+    // cv::Mat paddingSrc = makePadding(originSrc, padding);
+    
+    // dbNetTime = getCurrentTime() - startTime;
+    // Logger("dbNetTime(%fms)\n", dbNetTime);
+
+    // // if(std::memcmp(dst.data, paddingSrc.data, dst.total()*dst.elemSize())==0)
+    // //     Logger("两张图片结果一样\n");
+    // ScaleParam scale = getScaleParam(paddingSrc, resize);
+    cv::Mat paddingSrc  = dst_padding;
+    ScaleParam scale;
+    scale.srcWidth = paddingSrc.cols;
+    scale.srcHeight=paddingSrc.rows;
+    scale.dstWidth=dst_resize.cols;
+    scale.dstHeight=dst_resize.rows;
+    scale.ratioWidth = ratio_wh[0];
+    scale.ratioHeight = ratio_wh[0];
     OcrResult result;
     result = detect(path, imgName, paddingSrc, paddingRect, scale,
                     boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
@@ -138,7 +174,7 @@ OcrResult OcrLite::detect(const char *path, const char *imgName,
     int thickness = getThickness(src);
 
     Logger("=====Start detect=====\n");
-    Logger("ScaleParam(sw:%d,sh:%d,dw:%d,dh:%d,%f,%f)\n", scale.srcWidth, scale.srcHeight,
+    Logger("这这ScaleParam(sw:%d,sh:%d,dw:%d,dh:%d,%f,%f)\n", scale.srcWidth, scale.srcHeight,
            scale.dstWidth, scale.dstHeight,
            scale.ratioWidth, scale.ratioHeight);
 

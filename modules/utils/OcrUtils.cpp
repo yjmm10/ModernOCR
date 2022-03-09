@@ -92,7 +92,7 @@ void drawTextBox(cv::Mat &boxImg, const std::vector<cv::Point> &box, int thickne
     cv::line(boxImg, box[3], box[0], color, thickness);
 }
 
-void drawTextBoxes(cv::Mat &boxImg, std::vector<TextBox> &textBoxes, int thickness) {
+void drawTextBoxes(cv::Mat &boxImg, std::vector<TextBox> &textBoxes, int thickness=1) {
     for (int i = 0; i < textBoxes.size(); ++i) {
         drawTextBox(boxImg, textBoxes[i].boxPoint, thickness);
     }
