@@ -1,10 +1,10 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 14:21:06
- * @LastEditTime: 2022-03-07 14:21:54
+ * @LastEditTime: 2022-03-09 23:29:19
  * @LastEditors: Petrichor
  * @Description:  
- * @FilePath: \OcrLiteOnnx\ocr\utils\OcrLite.h
+ * @FilePath: \ModernOCR\modules\OcrLite\OcrLite.h
  * 版权声明
  */
 #ifndef __OCR_LITE_H__
@@ -41,7 +41,6 @@ public:
     OcrResult detect(const cv::Mat &mat,
                      int padding, int maxSideLen,
                      float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
-
 private:
     bool isOutputConsole = false;
     bool isOutputPartImg = false;
@@ -59,6 +58,10 @@ private:
                      cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
                      float boxScoreThresh = 0.6f, float boxThresh = 0.3f,
                      float unClipRatio = 2.0f, bool doAngle = true, bool mostAngle = true);
+    OcrResult detect(const char* path, const char* imgName, 
+                    cv::Mat &src, const std::vector<float> ratio_wh, const int padding,
+                    float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
+   
 };
 
 #endif //__OCR_LITE_H__

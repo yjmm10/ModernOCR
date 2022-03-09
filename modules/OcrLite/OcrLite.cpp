@@ -124,7 +124,9 @@ OcrResult OcrLite::detect(const char *path, const char *imgName,
     scale.ratioWidth = ratio_wh[0];
     scale.ratioHeight = ratio_wh[0];
     OcrResult result;
-    result = detect(path, imgName, paddingSrc, paddingRect, scale,
+    // result = detect(path, imgName, paddingSrc, paddingRect, scale,
+    //                 boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
+    result = detect(path, imgName, paddingSrc, ratio_wh, padding,
                     boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
     return result;
 }
@@ -166,6 +168,112 @@ std::vector<cv::Mat> OcrLite::getPartImages(cv::Mat &src, std::vector<TextBox> &
     return partImages;
 }
 
+//new
+OcrResult OcrLite::detect(const char* path, const char* imgName, 
+                          cv::Mat &src, std::vector<float> ratio_wh, const int padding,
+                          float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle){
+    cv::Mat textBoxPaddingImg = src.clone();
+    double startTime = getCurrentTime();
+    std::cout<<"here normal"<<std::endl;
+    std::vector<TextBox> textBoxes = dbNet.getTextBoxes(src, ratio_wh, boxScoreThresh, boxThresh, unClipRatio);
+    std::cout<<"here normal1111"<<std::endl;
+    double endDbNetTime = getCurrentTime();
+    double dbNetTime = endDbNetTime - startTime;
+    Logger("dbNetTime(%fms)\n", dbNetTime);
+
+    for (int i = 0; i < textBoxes.size(); ++i) {
+        Logger("TextBox[%d](+padding)[score(%f),[x: %d, y: %d], [x: %d, y: %d], [x: %d, y: %d], [x: %d, y: %d]]\n", i,
+               textBoxes[i].score,
+               textBoxes[i].boxPoint[0].x, textBoxes[i].boxPoint[0].y,
+               textBoxes[i].boxPoint[1].x, textBoxes[i].boxPoint[1].y,
+               textBoxes[i].boxPoint[2].x, textBoxes[i].boxPoint[2].y,
+               textBoxes[i].boxPoint[3].x, textBoxes[i].boxPoint[3].y);
+    }
+
+    Logger("---------- step: drawTextBoxes ----------\n");
+    drawTextBoxes(textBoxPaddingImg, textBoxes, 10);
+
+    //---------- getPartImages ----------
+    std::vector<cv::Mat> partImages = getPartImages(src, textBoxes, path, imgName);
+
+    Logger("---------- step: angleNet getAngles ----------\n");
+    std::vector<Angle> angles;
+    angles = angleNet.getAngles(partImages, path, imgName, doAngle, mostAngle);
+
+    //Log Angles
+    for (int i = 0; i < angles.size(); ++i) {
+        Logger("angle[%d][index(%d), score(%f), time(%fms)]\n", i, angles[i].index, angles[i].score, angles[i].time);
+    }
+
+    //Rotate partImgs
+    for (int i = 0; i < partImages.size(); ++i) {
+        if (angles[i].index == 0) {
+            partImages.at(i) = matRotateClockWise180(partImages[i]);
+        }
+    }
+
+    Logger("---------- step: crnnNet getTextLine ----------\n");
+    std::vector<TextLine> textLines = crnnNet.getTextLines(partImages, path, imgName);
+    //Log TextLines
+    for (int i = 0; i < textLines.size(); ++i) {
+        Logger("textLine[%d](%s)\n", i, textLines[i].text.c_str());
+        std::ostringstream txtScores;
+        for (int s = 0; s < textLines[i].charScores.size(); ++s) {
+            if (s == 0) {
+                txtScores << textLines[i].charScores[s];
+            } else {
+                txtScores << " ," << textLines[i].charScores[s];
+            }
+        }
+        Logger("textScores[%d]{%s}\n", i, std::string(txtScores.str()).c_str());
+        Logger("crnnTime[%d](%fms)\n", i, textLines[i].time);
+    }
+
+    std::vector<TextBlock> textBlocks;
+    for (int i = 0; i < textLines.size(); ++i) {
+        std::vector<cv::Point> boxPoint = std::vector<cv::Point>(4);
+        boxPoint[0] = cv::Point(textBoxes[i].boxPoint[0].x - padding, textBoxes[i].boxPoint[0].y - padding);
+        boxPoint[1] = cv::Point(textBoxes[i].boxPoint[1].x - padding, textBoxes[i].boxPoint[1].y - padding);
+        boxPoint[2] = cv::Point(textBoxes[i].boxPoint[2].x - padding, textBoxes[i].boxPoint[2].y - padding);
+        boxPoint[3] = cv::Point(textBoxes[i].boxPoint[3].x - padding, textBoxes[i].boxPoint[3].y - padding);
+        TextBlock textBlock{boxPoint, textBoxes[i].score, angles[i].index, angles[i].score,
+                            angles[i].time, textLines[i].text, textLines[i].charScores, textLines[i].time,
+                            angles[i].time + textLines[i].time};
+        textBlocks.emplace_back(textBlock);
+    }
+
+    double endTime = getCurrentTime();
+    double fullTime = endTime - startTime;
+    Logger("=====End detect=====\n");
+    Logger("FullDetectTime(%fms)\n", fullTime);
+
+    //cropped to original size
+    cv::Mat rgbBoxImg, textBoxImg;
+
+    if (padding > 0) {
+        rgbBoxImg = textBoxPaddingImg(cv::Rect(padding,padding,src.cols-2*padding,src.rows-2*padding));
+        // textBoxPaddingImg(originRect).copyTo(rgbBoxImg);
+    } else {
+        rgbBoxImg = textBoxPaddingImg;
+    }
+    cvtColor(rgbBoxImg, textBoxImg, cv::COLOR_RGB2BGR);//convert to BGR for Output Result Img
+
+    //Save result.jpg
+    if (isOutputResultImg) {
+        std::string resultImgFile = getResultImgFilePath(path, imgName);
+        imwrite(resultImgFile, textBoxImg);
+    }
+
+    std::string strRes;
+    for (int i = 0; i < textBlocks.size(); ++i) {
+        strRes.append(textBlocks[i].text);
+        strRes.append("\n");
+    }
+
+    return OcrResult{dbNetTime, textBlocks, textBoxImg, fullTime, strRes};
+}
+
+
 OcrResult OcrLite::detect(const char *path, const char *imgName,
                           cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
                           float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle) {
@@ -174,7 +282,7 @@ OcrResult OcrLite::detect(const char *path, const char *imgName,
     int thickness = getThickness(src);
 
     Logger("=====Start detect=====\n");
-    Logger("这这ScaleParam(sw:%d,sh:%d,dw:%d,dh:%d,%f,%f)\n", scale.srcWidth, scale.srcHeight,
+    Logger("ScaleParam(sw:%d,sh:%d,dw:%d,dh:%d,%f,%f)\n", scale.srcWidth, scale.srcHeight,
            scale.dstWidth, scale.dstHeight,
            scale.ratioWidth, scale.ratioHeight);
 

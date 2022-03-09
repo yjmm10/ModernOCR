@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 17:27:29
- * @LastEditTime: 2022-03-08 17:33:47
+ * @LastEditTime: 2022-03-09 22:34:58
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\DbNet\DbNet.h
@@ -26,6 +26,8 @@ public:
 
     std::vector<TextBox> getTextBoxes(cv::Mat &src, ScaleParam &s, float boxScoreThresh,
                                       float boxThresh, float unClipRatio);
+    std::vector<TextBox> getTextBoxes(cv::Mat &src, std::vector<float> &ratio_wh, float boxScoreThresh,
+                                      float boxThresh, float unClipRatio);
 
 private:
     Ort::Session *session;
@@ -36,6 +38,9 @@ private:
     char *outputName;
     std::shared_ptr<spdlog::logger> log;
     inline std::vector<TextBox> findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, ScaleParam &s,
+                                 const float boxScoreThresh, const float unClipRatio);
+    //new
+    inline std::vector<TextBox> findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, std::vector<float> &ratio_wh,
                                  const float boxScoreThresh, const float unClipRatio);
 
     const float meanValues[3] = {float(0.485 * 255), float(0.456 * 255), float(0.406 * 255)};
