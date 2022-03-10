@@ -9,7 +9,7 @@ add_library(${PROJECT_NAME} ${SRCS})
 set(INTER_LIBS utils)
 set(OUTER_LIBS spdlog ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC ${OUTER_LIBS} ${INTER_LIBS})
+    PUBLIC ${INTER_LIBS} ${OUTER_LIBS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 

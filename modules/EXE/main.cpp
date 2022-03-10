@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 
     ocrLite.initModels(modelDetPath, modelClsPath, modelRecPath, keysPath);
 
-    OcrResult result = ocrLite.detect(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
+    OcrResult result = ocrLite.detect_new(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
                                       boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
     ocrLite.Logger("%s\n", result.strRes.c_str());
     return 0;

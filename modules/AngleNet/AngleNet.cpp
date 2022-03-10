@@ -1,6 +1,7 @@
 #include "AngleNet.h"
 #include "utils/OcrUtils.h"
 #include <numeric>
+#include "utils/operators.h"
 
 AngleNet::AngleNet() {}
 
@@ -57,7 +58,8 @@ Angle scoreToAngle(const std::vector<float> &outputData) {
 
 Angle AngleNet::getAngle(cv::Mat &src) {
 
-    std::vector<float> inputTensorValues = substractMeanNormalize(src, meanValues, normValues);
+    std::vector<float> inputTensorValues;
+    op::MeanNormalize(src, meanValues, normValues,inputTensorValues);
 
     std::array<int64_t, 4> inputShape{1, src.channels(), src.rows, src.cols};
 
@@ -84,6 +86,7 @@ Angle AngleNet::getAngle(cv::Mat &src) {
 
 std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                        const char *imgName, bool doAngle, bool mostAngle) {
+    // assert(!partImgs.isempty());
     int size = partImgs.size();
     std::vector<Angle> angles(size);
     if (doAngle) {

@@ -1,10 +1,10 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 14:21:06
- * @LastEditTime: 2022-03-07 14:21:54
+ * @LastEditTime: 2022-03-10 19:48:42
  * @LastEditors: Petrichor
  * @Description:  
- * @FilePath: \OcrLiteOnnx\ocr\utils\OcrLite.h
+ * @FilePath: \ModernOCR\modules\OcrLite\OcrLite.h
  * 版权声明
  */
 #ifndef __OCR_LITE_H__
@@ -34,13 +34,16 @@ public:
 
     void Logger(const char *format, ...);
 
-    OcrResult detect(const char *path, const char *imgName,
+    // OcrResult detect(const char *path, const char *imgName,
+    //                  int padding, int maxSideLen,
+    //                  float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
+    OcrResult detect_new(const char *path, const char *imgName,
                      int padding, int maxSideLen,
                      float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
 
-    OcrResult detect(const cv::Mat &mat,
-                     int padding, int maxSideLen,
-                     float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
+    // OcrResult detect(const cv::Mat &mat,
+    //                  int padding, int maxSideLen,
+    //                  float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
 
 private:
     bool isOutputConsole = false;
@@ -55,10 +58,10 @@ private:
     std::vector<cv::Mat> getPartImages(cv::Mat &src, std::vector<TextBox> &textBoxes,
                                        const char *path, const char *imgName);
 
-    OcrResult detect(const char *path, const char *imgName,
-                     cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
-                     float boxScoreThresh = 0.6f, float boxThresh = 0.3f,
-                     float unClipRatio = 2.0f, bool doAngle = true, bool mostAngle = true);
+    // OcrResult detect(const char *path, const char *imgName,
+    //                  cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,
+    //                  float boxScoreThresh = 0.6f, float boxThresh = 0.3f,
+    //                  float unClipRatio = 2.0f, bool doAngle = true, bool mostAngle = true);
 };
 
 #endif //__OCR_LITE_H__
