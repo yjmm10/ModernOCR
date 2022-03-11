@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-11 11:42:06
- * @LastEditTime: 2022-03-11 14:35:54
+ * @LastEditTime: 2022-03-11 18:14:12
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\core\utils.h
@@ -15,12 +15,29 @@
 #include "types.h"
 namespace ModernOCR {
     namespace utils
-    {
-        double getCurrentTime();
+    {                 
+        inline double GetCurrentTime() {
+            return (static_cast<double>(cv::getTickCount())) / cv::getTickFrequency() * 1000;//单位毫秒
+        };
         inline bool isFileExists(const std::string &name) {
             struct stat buffer;
             return (stat(name.c_str(), &buffer) == 0);
         };
+        inline std::string GetBoxInfo(std::vector<types::BoxInfo> rsBoxes) {
+            std::string result="";
+            for (int i = 0; i < rsBoxes.size(); ++i) {
+                char info[1024];
+                std::sprintf(info,"BoxInfo(after padding)[%d][score:%f, pos:(%d, %d), (%d, %d), (%d, %d), (%d, %d)]\n", i,
+                   rsBoxes[i].score,
+                   rsBoxes[i].boxPoint[0].x, rsBoxes[i].boxPoint[0].y,
+                   rsBoxes[i].boxPoint[1].x, rsBoxes[i].boxPoint[1].y,
+                   rsBoxes[i].boxPoint[2].x, rsBoxes[i].boxPoint[2].y,
+                   rsBoxes[i].boxPoint[3].x, rsBoxes[i].boxPoint[3].y);
+                result +=std::string(info);
+            }
+            return result;
+        }
+
     } // namespace common
     
     

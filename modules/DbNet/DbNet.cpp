@@ -12,7 +12,7 @@ DbNet::DbNet() {
     log = spdlog::get("DbNet");
     if(log==nullptr)
     {
-        log = spdlog::basic_logger_mt("DbNet", "logs/ModernOCR.txt");
+        log = spdlog::basic_logger_mt("DbNet", "logs/ModernOCR.log");
         log->info("Create DbNet logs!");
     }else{
         log->info("Load DbNet logs!");
@@ -46,6 +46,25 @@ void DbNet::setNumThread(int numOfThread) {
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
 }
 
+bool DbNet::LoadModel(const std::string &modelPath) {
+try
+{
+#ifdef _WIN32
+    std::wstring dbPath = str::strToWstr(modelPath);
+    session = new Ort::Session(env, dbPath.c_str(), sessionOptions);
+#else
+    session = new Ort::Session(env, modelPath.c_str(), sessionOptions);
+#endif
+    log->info("DbNet Model[{}]successfully loaded!",modelPath);
+}
+catch(const std::exception& e)
+{
+    SPDLOG_LOGGER_ERROR(log,e.what());
+}
+    ort::getInputName(session, inputName);
+    ort::getOutputName(session, outputName);
+}
+
 void DbNet::initModel(const std::string &pathStr) {
 try
 {
@@ -67,6 +86,7 @@ catch(const std::exception& e)
 
 std::vector<cv::Mat>
 DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, float unClipRatio,int maxSideLen) {
+    double startTime = utils::GetCurrentTime();
     // preprocess
     // 边界填充之后增加获取比例
     //src 640 padding 740 resize 736
@@ -74,6 +94,9 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
     op::SetPadding(src,dst_padding,padding);
     std::vector<float> ratio_wh;
     op::ResizeByMaxSide(dst_padding,dst_resize,maxSideLen,ratio_wh);
+    double preprocessTime = utils::GetCurrentTime() - startTime;
+    log->info("Preprocess: [src_wh: ({},{}), padding_wh: ({},{}), resize_wh: ({},{}), cost {:.5} s].",
+                src.cols,src.rows,dst_padding.cols,dst_padding.rows,dst_resize.cols,dst_resize.rows, preprocessTime);
     
     //inference
     // std::cout<<outputName<<std::endl;
@@ -83,6 +106,8 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
     // ort::ModelInference(session, inputName, outputName,
     //                 dst_resize,meanValues, normValues,
     //                 floatArray,outputShape, outputCount);
+    
+    startTime = utils::GetCurrentTime();
     std::vector<float> inputTensorValues;
 
     op::MeanNormalize(dst_resize,meanValues, normValues,inputTensorValues);
@@ -100,14 +125,18 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
                                           std::multiplies<int64_t>());
     float *floatArray = outputTensor.front().GetTensorMutableData<float>();
     
+    double inferenceTime = utils::GetCurrentTime() - startTime;
+    log->info("Inference: [cost {:.5} s].", inferenceTime);
+    startTime = utils::GetCurrentTime();
+
     //-----Data preparation-----
     cv::Mat fMapMat(dst_resize.rows, dst_resize.cols, CV_32FC1);
     memcpy(fMapMat.data, floatArray, size_t(outputCount * sizeof(float)));
     
+    assert(dst_resize.data());
     //-----boxThresh-----
     cv::Mat norfMapMat;
     norfMapMat = fMapMat > boxThresh;
-
 
     //postprocess    
     //  形态学闭运算，先膨胀再腐蚀,增大范围
@@ -124,25 +153,27 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
 
     std::vector<std::vector<cv::Point>> contours;
     findContours(norfMapMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-    log->info("Find {} Contours!",123);
-    for (unsigned int i = 0; i < contours.size(); ++i) {
+    log->debug("Postprocess: [find {} Contours, cost {:.5} s.]",contours.size(),utils::GetCurrentTime() - startTime);
+    for (auto contour : contours) {
+        if(contour.size()<4)    continue;
         float minSideLen, perimeter;
         std::vector<cv::Point> minBox;
-        op::GetMinBoxes(contours[i], minSideLen, perimeter,minBox);
+        op::GetMinBoxes(contour, minSideLen, perimeter,minBox);
         if (minSideLen < minArea)
             continue;
         float score;
-        op::BoxScoreFast(fMapMat, contours[i],score);
+        op::BoxScoreFast(fMapMat, contour,score);
         if (score < boxScoreThresh)
             continue;
         //---use clipper start---
         std::vector<cv::Point> clipBox;
         op::UnClip(minBox, perimeter, unClipRatio, clipBox);
+        
         std::vector<cv::Point> clipMinBox;
         op::GetMinBoxes(clipBox, minSideLen, perimeter,clipMinBox);
-        //---use clipper end---
 
-        if (minSideLen < minArea + 2)
+        //---use clipper end---
+        if(clipMinBox.size()<4 || minSideLen < minArea + 2)
             continue;
 
         // box坐标对应到padding图像中
@@ -156,23 +187,12 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
         }
         rsBoxes.insert(rsBoxes.begin(),types::BoxInfo{clipMinBox, score});
     }
-   
-    // 输出所有的数据
-    // for (int i = 0; i < rsBoxes.size(); ++i) {
-    //     printf("TextBox[%d](+padding)[score(%f),[x: %d, y: %d], [x: %d, y: %d], [x: %d, y: %d], [x: %d, y: %d]]\n", i,
-    //            rsBoxes[i].score,
-    //            rsBoxes[i].boxPoint[0].x, rsBoxes[i].boxPoint[0].y,
-    //            rsBoxes[i].boxPoint[1].x, rsBoxes[i].boxPoint[1].y,
-    //            rsBoxes[i].boxPoint[2].x, rsBoxes[i].boxPoint[2].y,
-    //            rsBoxes[i].boxPoint[3].x, rsBoxes[i].boxPoint[3].y);
-    // }
-
-
-
+    
     //---------- getPartImages ----------
     // 获取resize后图像的box
     std::vector<cv::Mat> partImages = image::getPartImages(dst_resize, rsBoxes);
-
+    double postprocessTime = utils::GetCurrentTime() - startTime;
+    log->info("Postprocess: [Get {} boxes(images), cost {:.5} s.\n{}]",rsBoxes.size(),postprocessTime,utils::GetBoxInfo(rsBoxes));
 
     //Save result.jpg
     // /isOutputResultImg

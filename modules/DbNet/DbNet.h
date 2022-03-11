@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 17:27:29
- * @LastEditTime: 2022-03-11 13:54:26
+ * @LastEditTime: 2022-03-11 16:44:59
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\DbNet\DbNet.h
@@ -23,6 +23,7 @@ public:
     ~DbNet();
 
     void setNumThread(int numOfThread);
+    bool LoadModel(const std::string &modelPath);
 
     void initModel(const std::string &pathStr);
 

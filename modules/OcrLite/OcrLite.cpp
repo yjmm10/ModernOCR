@@ -299,10 +299,10 @@ types::OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     cv::Mat dst_resize;
     originSrc.copyTo(dst_resize);
     Logger("---------- step: dbNet getTextBoxes ----------\n");
-    double startTime = utils::getCurrentTime();
+    double startTime = utils::GetCurrentTime();
     // std::vector<TextBox> textBoxes 
     std::vector<cv::Mat> partImages = dbNet.Run(dst_resize, padding, boxScoreThresh, boxThresh, unClipRatio,maxSideLen);
-    double endDbNetTime = utils::getCurrentTime();
+    double endDbNetTime = utils::GetCurrentTime();
     double dbNetTime = endDbNetTime - startTime;
     Logger("dbNetTime(%fms)\n", dbNetTime);
 
@@ -354,7 +354,7 @@ types::OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     //     textBlocks.emplace_back(textBlock);
     // }
 
-    double endTime = utils::getCurrentTime();
+    double endTime = utils::GetCurrentTime();
     double fullTime = endTime - startTime;
     Logger("=====End detect=====\n");
     Logger("FullDetectTime(%fms)\n", fullTime);

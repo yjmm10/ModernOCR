@@ -140,9 +140,9 @@ std::vector<types::RecInfo> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg,
         }
 
         //getTextLine
-        double startCrnnTime = utils::getCurrentTime();
+        double startCrnnTime = utils::GetCurrentTime();
         types::RecInfo textLine = getTextLine(partImg[i]);
-        double endCrnnTime = utils::getCurrentTime();
+        double endCrnnTime = utils::GetCurrentTime();
         textLine.time = endCrnnTime - startCrnnTime;
         textLines[i] = textLine;
     }

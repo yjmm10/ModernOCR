@@ -84,13 +84,13 @@ std::vector<types::AngleInfo> AngleNet::getAngles(std::vector<cv::Mat> &partImgs
     if (doAngle) {
         for (int i = 0; i < size; ++i) {
             //preprocess
-            double startAngle = utils::getCurrentTime();
+            double startAngle = utils::GetCurrentTime();
             auto angleImg = op::ResizeByValue(partImgs[i], dstWidth, dstHeight);
 
             //inference
             // 模型推理
             types::AngleInfo angle = getAngle(angleImg);
-            double endAngle = utils::getCurrentTime();
+            double endAngle = utils::GetCurrentTime();
             angle.time = endAngle - startAngle;
 
             angles[i] = angle;

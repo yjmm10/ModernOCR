@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-11 11:40:37
- * @LastEditTime: 2022-03-11 14:36:04
+ * @LastEditTime: 2022-03-11 17:21:28
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\core\utils.cpp
@@ -12,9 +12,7 @@
 
 namespace ModernOCR {
     namespace utils{
-        double getCurrentTime() {
-            return (static_cast<double>(cv::getTickCount())) / cv::getTickFrequency() * 1000;//单位毫秒
-        };
+
 
     };
     
