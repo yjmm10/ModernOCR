@@ -6,10 +6,10 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRCS)
 
 add_library(${PROJECT_NAME} ${SRCS})
 
-set(INTER_LIBS utils DbNet CrnnNet AngleNet)
+set(INTER_LIBS core DbNet CrnnNet AngleNet)
 set(OUTER_LIBS spdlog ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC ${OUTER_LIBS} ${INTER_LIBS})
+    PUBLIC ${INTER_LIBS} ${OUTER_LIBS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

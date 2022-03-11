@@ -48,7 +48,8 @@ else ()
     message(FATAL_ERROR "onnxruntime Not Found!")
 endif (OnnxRuntime_FOUND)
 
-add_subdirectory(utils)
+add_subdirectory(core)
+# add_subdirectory(utils)
 
 # if(BUILD_TEST)
 #     add_subdirectory(Test)

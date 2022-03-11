@@ -4,12 +4,16 @@
 #include "main.h"
 #include "version.h"
 #include "OcrLite/OcrLite.h"
-#include "utils/OcrUtils.h"
+// #include "utils/OcrUtils.h"
 #include <iostream>
+#include "core/modernocr.h"
+
+
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 using namespace spdlog;
+using namespace ModernOCR;
 
 void printHelp(FILE *out, char *argv0) {
     fprintf(out, " ------- Usage -------\n");
@@ -141,27 +145,27 @@ int main(int argc, char **argv) {
     if (keysPath.empty()) {
         keysPath = modelsDir + "/" + "keys.txt";
     }
-    bool hasTargetImgFile = isFileExists(imgPath);
+    bool hasTargetImgFile = utils::isFileExists(imgPath);
     if (!hasTargetImgFile) {
         fprintf(stderr, "Target image not found: %s\n", imgPath.c_str());
         return -1;
     }
-    bool hasModelDetFile = isFileExists(modelDetPath);
+    bool hasModelDetFile = utils::isFileExists(modelDetPath);
     if (!hasModelDetFile) {
         fprintf(stderr, "Model dbnet file not found: %s\n", modelDetPath.c_str());
         return -1;
     }
-    bool hasModelClsFile = isFileExists(modelClsPath);
+    bool hasModelClsFile = utils::isFileExists(modelClsPath);
     if (!hasModelClsFile) {
         fprintf(stderr, "Model angle file not found: %s\n", modelClsPath.c_str());
         return -1;
     }
-    bool hasModelRecFile = isFileExists(modelRecPath);
+    bool hasModelRecFile = utils::isFileExists(modelRecPath);
     if (!hasModelRecFile) {
         fprintf(stderr, "Model crnn file not found: %s\n", modelRecPath.c_str());
         return -1;
     }
-    bool hasKeysFile = isFileExists(keysPath);
+    bool hasKeysFile = utils::isFileExists(keysPath);
     if (!hasKeysFile) {
         fprintf(stderr, "keys file not found: %s\n", keysPath.c_str());
         return -1;
@@ -181,7 +185,7 @@ int main(int argc, char **argv) {
 
     ocrLite.initModels(modelDetPath, modelClsPath, modelRecPath, keysPath);
 
-    OcrResult result = ocrLite.detect_new(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
+    types::OcrResult result = ocrLite.detect_new(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
                                       boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
     ocrLite.Logger("%s\n", result.strRes.c_str());
     return 0;

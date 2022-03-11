@@ -1,14 +1,14 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-09 15:36:06
- * @LastEditTime: 2022-03-10 17:51:40
+ * @LastEditTime: 2022-03-11 10:58:55
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\utils\operators.cpp
  * 版权声明
  */
 
-#include <opencv2/core.hpp>
+// #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 #include "operators.h"
 #include "clipper.hpp"
@@ -195,4 +195,33 @@ namespace op
         }
     }
 
+
+    cv::Mat ResizeByValue(cv::Mat &src, int dstWidth, int dstHeight) {
+        cv::Mat srcResize;
+        float scale = (float) dstHeight / (float) src.rows;
+        int angleWidth = int((float) src.cols * scale);
+        cv::resize(src, srcResize, cv::Size(angleWidth, dstHeight));
+        cv::Mat srcFit = cv::Mat(dstHeight, dstWidth, CV_8UC3, cv::Scalar(255, 255, 255));
+        if (angleWidth < dstWidth) {
+            cv::Rect rect(0, 0, srcResize.cols, srcResize.rows);
+            srcResize.copyTo(srcFit(rect));
+        } else {
+            cv::Rect rect(0, 0, dstWidth, dstHeight);
+            srcResize(rect).copyTo(srcFit);
+        }
+        return srcFit;
+    }
+
+    void ResizeBySize(const cv::Mat &src, cv::Mat &dst, int dstWidth, int dstHeight){
+        cv::resize(src, dst, cv::Size(dstWidth, dstHeight));
+    }
+
+    std::vector<int> GetAngleIndexes(std::vector<types::AngleInfo> &angles) {
+        std::vector<int> angleIndexes;
+        angleIndexes.reserve(angles.size());
+        for (int i = 0; i < angles.size(); ++i) {
+            angleIndexes.push_back(angles[i].index);
+        }
+        return angleIndexes;
+    }
 } // namespace op

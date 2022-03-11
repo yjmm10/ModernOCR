@@ -6,7 +6,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRCS)
 
 add_library(${PROJECT_NAME} ${SRCS})
 
-set(LIBS utils)
+set(LIBS core)
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${LIBS} ${OpenMP_CXX_LIB_NAMES})
 

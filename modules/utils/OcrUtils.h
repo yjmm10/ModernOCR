@@ -6,6 +6,7 @@
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <numeric>
 #include <sys/stat.h>
+#include "utils/types.h"
 
 template<typename T, typename... Ts>
 static std::unique_ptr<T> makeUnique(Ts &&... params) {
@@ -80,7 +81,7 @@ std::vector<cv::Point> unClip(const std::vector<cv::Point> &inBox, float perimet
 
 std::vector<float> substractMeanNormalize(cv::Mat &src, const float *meanVals, const float *normVals);
 
-std::vector<int> getAngleIndexes(std::vector<Angle> &angles);
+std::vector<int> getAngleIndexes(std::vector<types::AngleInfo> &angles);
 
 std::vector<char *> getInputNames(Ort::Session *session);
 

@@ -1,11 +1,11 @@
 #include "OcrLite.h"
-#include "utils/OcrUtils.h"
+// #include "utils/OcrUtils.h"
 #include <stdarg.h> //windows&linux
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include "utils/operators.h"
-
+// #include "utils/operators.h"
+// #include "utils/types.h"
 // test
 #include <string>
 
@@ -31,7 +31,7 @@ void OcrLite::initLogger(bool isConsole, bool isPartImg, bool isResultImg) {
 
 void OcrLite::enableResultTxt(const char *path, const char *imgName) {
     isOutputResultTxt = true;
-    std::string resultTxtPath = getResultTxtFilePath(path, imgName);
+    std::string resultTxtPath = image::getResultTxtFilePath(path, imgName);
     printf("resultTxtPath(%s)\n", resultTxtPath.c_str());
     resultTxt = fopen(resultTxtPath.c_str(), "w");
 }
@@ -156,20 +156,21 @@ OcrResult OcrLite::detect(const cv::Mat& mat, int padding, int maxSideLen, float
 
 */
 
-std::vector<cv::Mat> OcrLite::getPartImages(cv::Mat &src, std::vector<TextBox> &textBoxes,
-                                            const char *path, const char *imgName) {
-    std::vector<cv::Mat> partImages;
-    for (int i = 0; i < textBoxes.size(); ++i) {
-        cv::Mat partImg = getRotateCropImage(src, textBoxes[i].boxPoint);
-        partImages.emplace_back(partImg);
-        //OutPut DebugImg
-        if (isOutputPartImg) {
-            std::string debugImgFile = getDebugImgFilePath(path, imgName, i, "-part-");
-            saveImg(partImg, debugImgFile.c_str());
-        }
-    }
-    return partImages;
-}
+// std::vector<cv::Mat> OcrLite::getPartImages(cv::Mat &src, std::vector<types::BoxInfo> &textBoxes,
+//                                             const char *path, const char *imgName) {
+//     std::vector<cv::Mat> partImages;
+//     for (int i = 0; i < textBoxes.size(); ++i) {
+//         cv::Mat partImg;
+//         image::getRotateCropImage(src, textBoxes[i].boxPoint,partImg);
+//         partImages.emplace_back(partImg);
+//         //OutPut DebugImg
+//         if (isOutputPartImg) {
+//             std::string debugImgFile = image::getDebugImgFilePath(path, imgName, i, "-part-");
+//             image::saveImg(partImg, debugImgFile.c_str());
+//         }
+//     }
+//     return partImages;
+// }
 
 /*
 OcrResult OcrLite::detect(const char *path, const char *imgName,
@@ -284,30 +285,30 @@ OcrResult OcrLite::detect(const char *path, const char *imgName,
 }
 */
 
-OcrResult OcrLite::detect_new(const char *path, const char *imgName,
+types::OcrResult OcrLite::detect_new(const char *path, const char *imgName,
                           const int padding, const int maxSideLen,
                           float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle) {
-    std::string imgFile = getSrcImgFilePath(path, imgName);
+    std::string imgFile = image::getSrcImgFilePath(path, imgName);
 
     cv::Mat bgrSrc = imread(imgFile, cv::IMREAD_COLOR);//default : BGR
     cv::Mat originSrc;
     cvtColor(bgrSrc, originSrc, cv::COLOR_BGR2RGB);// convert to RGB
 
-    OcrResult result;
+    types::OcrResult result;
 
     cv::Mat dst_resize;
     originSrc.copyTo(dst_resize);
     Logger("---------- step: dbNet getTextBoxes ----------\n");
-    double startTime = getCurrentTime();
+    double startTime = utils::getCurrentTime();
     // std::vector<TextBox> textBoxes 
     std::vector<cv::Mat> partImages = dbNet.Run(dst_resize, padding, boxScoreThresh, boxThresh, unClipRatio,maxSideLen);
-    double endDbNetTime = getCurrentTime();
+    double endDbNetTime = utils::getCurrentTime();
     double dbNetTime = endDbNetTime - startTime;
     Logger("dbNetTime(%fms)\n", dbNetTime);
 
 
     Logger("---------- step: angleNet getAngles ----------\n");
-    std::vector<Angle> angles;
+    std::vector<types::AngleInfo> angles;
     angles = angleNet.getAngles(partImages, path, imgName, doAngle, mostAngle);
 
     //Log Angles
@@ -318,12 +319,12 @@ OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     //Rotate partImgs
     for (int i = 0; i < partImages.size(); ++i) {
         if (angles[i].index == 0) {
-            partImages.at(i) = matRotateClockWise180(partImages[i]);
+            partImages.at(i) = image::matRotateClockWise180(partImages[i]);
         }
     }
 
     Logger("---------- step: crnnNet getTextLine ----------\n");
-    std::vector<TextLine> textLines = crnnNet.getTextLines(partImages, path, imgName);
+    std::vector<types::RecInfo> textLines = crnnNet.getTextLines(partImages, path, imgName);
     //Log TextLines
     for (int i = 0; i < textLines.size(); ++i) {
         Logger("textLine[%d](%s)\n", i, textLines[i].text.c_str());
@@ -339,7 +340,7 @@ OcrResult OcrLite::detect_new(const char *path, const char *imgName,
         Logger("crnnTime[%d](%fms)\n", i, textLines[i].time);
     }
 
-    std::vector<TextBlock> textBlocks;
+    std::vector<types::TextBlock> textBlocks;
     // for (int i = 0; i < textLines.size(); ++i) {
     //     std::vector<cv::Point> boxPoint = std::vector<cv::Point>(4);
         
@@ -353,7 +354,7 @@ OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     //     textBlocks.emplace_back(textBlock);
     // }
 
-    double endTime = getCurrentTime();
+    double endTime = utils::getCurrentTime();
     double fullTime = endTime - startTime;
     Logger("=====End detect=====\n");
     Logger("FullDetectTime(%fms)\n", fullTime);
@@ -384,6 +385,6 @@ OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     //     strRes.append("\n");
     // }
 
-    return OcrResult{dbNetTime, textBlocks, textBoxImg, fullTime, strRes};
+    return types::OcrResult{dbNetTime, textBlocks, textBoxImg, fullTime, strRes};
     // return result;
 }

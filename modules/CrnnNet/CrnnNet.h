@@ -1,10 +1,19 @@
+/*
+ * @Author: Petrichor
+ * @Date: 2022-03-07 17:27:29
+ * @LastEditTime: 2022-03-11 14:03:35
+ * @LastEditors: Petrichor
+ * @Description:  
+ * @FilePath: \ModernOCR\modules\CrnnNet\CrnnNet.h
+ * 版权声明
+ */
 #ifndef __OCR_CRNNNET_H__
 #define __OCR_CRNNNET_H__
 
-#include "utils/OcrStruct.h"
+#include "core/modernocr.h"
+using namespace ModernOCR;
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#include <opencv2/opencv.hpp>
-
+// #include <opencv2/opencv.hpp>
 class CrnnNet {
 public:
 
@@ -16,7 +25,7 @@ public:
 
     void initModel(const std::string &pathStr, const std::string &keysPath);
 
-    std::vector<TextLine> getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName);
+    std::vector<types::RecInfo> getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName);
 
 private:
     bool isOutputDebugImg = false;
@@ -34,9 +43,9 @@ private:
 
     std::vector<std::string> keys;
 
-    TextLine scoreToTextLine(const std::vector<float> &outputData, int h, int w);
+    types::RecInfo scoreToTextLine(const std::vector<float> &outputData, int h, int w);
 
-    TextLine getTextLine(const cv::Mat &src);
+    types::RecInfo getTextLine(const cv::Mat &src);
 };
 
 

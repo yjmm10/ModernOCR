@@ -1,18 +1,23 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 13:22:18
- * @LastEditTime: 2022-03-07 13:30:18
+ * @LastEditTime: 2022-03-11 14:00:43
  * @LastEditors: Petrichor
  * @Description:  
- * @FilePath: \OcrLiteOnnx\ocr\AngleNet\AngleNet.h
+ * @FilePath: \ModernOCR\modules\AngleNet\AngleNet.h
  * 版权声明
  */
 #ifndef __OCR_ANGLENET_H__
 #define __OCR_ANGLENET_H__
 
-#include "utils/OcrStruct.h"
+// #include <utils/types.h>
+// #include "utils/OcrStruct.h"
+#include "core/modernocr.h"
+using namespace ModernOCR;
+
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
+
 
 class AngleNet {
 public:
@@ -24,7 +29,7 @@ public:
 
     void initModel(const std::string &pathStr);
 
-    std::vector<Angle> getAngles(std::vector<cv::Mat> &partImgs, const char *path,
+    std::vector<types::AngleInfo> getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                  const char *imgName, bool doAngle, bool mostAngle);
 
 private:
@@ -43,7 +48,7 @@ private:
     const int dstWidth = 192;
     const int dstHeight = 32;
 
-    Angle getAngle(cv::Mat &src);
+    types::AngleInfo getAngle(cv::Mat &src);
 };
 
 

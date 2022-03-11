@@ -1,8 +1,8 @@
 #include "CrnnNet.h"
-#include "utils/OcrUtils.h"
+// #include "utils/OcrUtils.h"
 #include <fstream>
 #include <numeric>
-
+// #include <utils/operators.h>
 CrnnNet::CrnnNet() {}
 
 CrnnNet::~CrnnNet() {
@@ -34,13 +34,13 @@ void CrnnNet::setNumThread(int numOfThread) {
 
 void CrnnNet::initModel(const std::string &pathStr, const std::string &keysPath) {
 #ifdef _WIN32
-    std::wstring crnnPath = strToWstr(pathStr);
+    std::wstring crnnPath = str::strToWstr(pathStr);
     session = new Ort::Session(env, crnnPath.c_str(), sessionOptions);
 #else
     session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
 #endif
-    getInputName(session, inputName);
-    getOutputName(session, outputName);
+    ort::getInputName(session, inputName);
+    ort::getOutputName(session, outputName);
 
     //load keys
     std::ifstream in(keysPath.c_str());
@@ -65,7 +65,7 @@ inline static size_t argmax(ForwardIterator first, ForwardIterator last) {
     return std::distance(first, std::max_element(first, last));
 }
 
-TextLine CrnnNet::scoreToTextLine(const std::vector<float> &outputData, int h, int w) {
+types::RecInfo CrnnNet::scoreToTextLine(const std::vector<float> &outputData, int h, int w) {
     int keySize = keys.size();
     std::string strRes;
     std::vector<float> scores;
@@ -94,14 +94,15 @@ TextLine CrnnNet::scoreToTextLine(const std::vector<float> &outputData, int h, i
     return {strRes, scores};
 }
 
-TextLine CrnnNet::getTextLine(const cv::Mat &src) {
+types::RecInfo CrnnNet::getTextLine(const cv::Mat &src) {
     float scale = (float) dstHeight / (float) src.rows;
     int dstWidth = int((float) src.cols * scale);
 
     cv::Mat srcResize;
-    resize(src, srcResize, cv::Size(dstWidth, dstHeight));
+    op::ResizeBySize(src, srcResize, dstWidth, dstHeight);
 
-    std::vector<float> inputTensorValues = substractMeanNormalize(srcResize, meanValues, normValues);
+    std::vector<float> inputTensorValues;
+    op::MeanNormalize(srcResize, meanValues, normValues,inputTensorValues);
 
     std::array<int64_t, 4> inputShape{1, srcResize.channels(), srcResize.rows, srcResize.cols};
 
@@ -122,24 +123,26 @@ TextLine CrnnNet::getTextLine(const cv::Mat &src) {
                                           std::multiplies<int64_t>());
 
     float *floatArray = outputTensor.front().GetTensorMutableData<float>();
+
     std::vector<float> outputData(floatArray, floatArray + outputCount);
+
     return scoreToTextLine(outputData, outputShape[0], outputShape[2]);
 }
 
-std::vector<TextLine> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName) {
+std::vector<types::RecInfo> CrnnNet::getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName) {
     int size = partImg.size();
-    std::vector<TextLine> textLines(size);
+    std::vector<types::RecInfo> textLines(size);
     for (int i = 0; i < size; ++i) {
         //OutPut DebugImg
         if (isOutputDebugImg) {
-            std::string debugImgFile = getDebugImgFilePath(path, imgName, i, "-debug-");
-            saveImg(partImg[i], debugImgFile.c_str());
+            std::string debugImgFile = image::getDebugImgFilePath(path, imgName, i, "-debug-");
+            image::saveImg(partImg[i], debugImgFile.c_str());
         }
 
         //getTextLine
-        double startCrnnTime = getCurrentTime();
-        TextLine textLine = getTextLine(partImg[i]);
-        double endCrnnTime = getCurrentTime();
+        double startCrnnTime = utils::getCurrentTime();
+        types::RecInfo textLine = getTextLine(partImg[i]);
+        double endCrnnTime = utils::getCurrentTime();
         textLine.time = endCrnnTime - startCrnnTime;
         textLines[i] = textLine;
     }

@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 14:21:06
- * @LastEditTime: 2022-03-10 19:48:42
+ * @LastEditTime: 2022-03-11 14:21:31
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\OcrLite\OcrLite.h
@@ -10,13 +10,16 @@
 #ifndef __OCR_LITE_H__
 #define __OCR_LITE_H__
 
-#include "opencv2/core.hpp"
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#include "utils/OcrStruct.h"
+#include "core/modernocr.h"
+
+
+// #include "opencv2/core.hpp"
+// #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+// #include "utils/OcrStruct.h"
 #include "DbNet/DbNet.h"
 #include "AngleNet/AngleNet.h"
 #include "CrnnNet/CrnnNet.h"
-
+using namespace ModernOCR;
 class OcrLite {
 public:
     OcrLite();
@@ -37,7 +40,7 @@ public:
     // OcrResult detect(const char *path, const char *imgName,
     //                  int padding, int maxSideLen,
     //                  float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
-    OcrResult detect_new(const char *path, const char *imgName,
+    types::OcrResult detect_new(const char *path, const char *imgName,
                      int padding, int maxSideLen,
                      float boxScoreThresh, float boxThresh, float unClipRatio, bool doAngle, bool mostAngle);
 
@@ -55,8 +58,8 @@ private:
     AngleNet angleNet;
     CrnnNet crnnNet;
 
-    std::vector<cv::Mat> getPartImages(cv::Mat &src, std::vector<TextBox> &textBoxes,
-                                       const char *path, const char *imgName);
+    // std::vector<cv::Mat> getPartImages(cv::Mat &src, std::vector<types::BoxInfo> &textBoxes,
+    //                                    const char *path, const char *imgName);
 
     // OcrResult detect(const char *path, const char *imgName,
     //                  cv::Mat &src, cv::Rect &originRect, ScaleParam &scale,

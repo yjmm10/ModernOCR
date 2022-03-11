@@ -6,11 +6,12 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRCS)
 
 add_library(${PROJECT_NAME} ${SRCS})
 
-set(LIBS utils )
+set(INTER_LIBS core)
+set(OUTER_LIBS spdlog ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${LIBS})
+    PUBLIC ${INTER_LIBS} ${OUTER_LIBS})
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/AngleNet.h")
 

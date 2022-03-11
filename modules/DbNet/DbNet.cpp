@@ -1,11 +1,13 @@
-
+#include <numeric>
 #include "DbNet.h"
-#include "utils/OcrUtils.h"
-#include "utils/operators.h"
+
+#include "core/modernocr.h"
+
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 using namespace spdlog;
+using namespace ModernOCR;
 DbNet::DbNet() {
     log = spdlog::get("DbNet");
     if(log==nullptr)
@@ -48,7 +50,7 @@ void DbNet::initModel(const std::string &pathStr) {
 try
 {
 #ifdef _WIN32
-    std::wstring dbPath = strToWstr(pathStr);
+    std::wstring dbPath = str::strToWstr(pathStr);
     session = new Ort::Session(env, dbPath.c_str(), sessionOptions);
 #else
     session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
@@ -59,105 +61,8 @@ catch(const std::exception& e)
 {
     SPDLOG_LOGGER_ERROR(log,e.what());
 }
-    getInputName(session, inputName);
-    getOutputName(session, outputName);
-}
-/*
-inline std::vector<TextBox> DbNet::findRsBoxes(const cv::Mat &fMapMat, const cv::Mat &norfMapMat, ScaleParam &s,
-                                 const float boxScoreThresh, const float unClipRatio) {
-    float minArea = 3;
-    std::vector<TextBox> rsBoxes;
-    rsBoxes.clear();
-    std::vector<std::vector<cv::Point>> contours;
-    findContours(norfMapMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-    log->info("Find {} Contours!",123);
-    for (unsigned int i = 0; i < contours.size(); ++i) {
-        float minSideLen, perimeter;
-        std::vector<cv::Point> minBox = getMinBoxes(contours[i], minSideLen, perimeter);
-        if (minSideLen < minArea)
-            continue;
-        float score = boxScoreFast(fMapMat, contours[i]);
-        if (score < boxScoreThresh)
-            continue;
-        //---use clipper start---
-        std::vector<cv::Point> clipBox = unClip(minBox, perimeter, unClipRatio);
-        std::vector<cv::Point> clipMinBox = getMinBoxes(clipBox, minSideLen, perimeter);
-        //---use clipper end---
-
-        if (minSideLen < minArea + 2)
-            continue;
-
-        for (unsigned int j = 0; j < clipMinBox.size(); ++j) {
-            clipMinBox[j].x = clipMinBox[j].x / s.ratioWidth;
-            clipMinBox[j].x = (std::min)((std::max)(clipMinBox[j].x, 0), s.srcWidth);
-
-            clipMinBox[j].y = clipMinBox[j].y / s.ratioHeight;
-            clipMinBox[j].y = (std::min)((std::max)(clipMinBox[j].y, 0), s.srcHeight);
-        }
-
-        rsBoxes.emplace_back(TextBox{clipMinBox, score});
-    }
-    reverse(rsBoxes.begin(), rsBoxes.end());
-    return rsBoxes;
-}
-*/
-/*
-std::vector<TextBox>
-DbNet::getTextBoxes(cv::Mat &src, ScaleParam &s, float boxScoreThresh, float boxThresh, float unClipRatio) {
-    cv::Mat srcResize;
-    try
-    {
-        resize(src, srcResize, cv::Size(s.dstWidth, s.dstHeight));
-        log->info("Resize images from ({}, {}) to ({}, {}).",src.cols,src.rows,s.dstWidth,s.dstHeight);
-    }
-    catch(const std::exception& e)
-    {
-        SPDLOG_LOGGER_ERROR(log,e.what());
-    }
-    std::vector<float> inputTensorValues = substractMeanNormalize(srcResize, meanValues, normValues);
-    std::array<int64_t, 4> inputShape{1, srcResize.channels(), srcResize.rows, srcResize.cols};
-    auto memoryInfo = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
-    Ort::Value inputTensor = Ort::Value::CreateTensor<float>(memoryInfo, inputTensorValues.data(),
-                                                             inputTensorValues.size(), inputShape.data(),
-                                                             inputShape.size());
-    assert(inputTensor.IsTensor());
-    auto outputTensor = session->Run(Ort::RunOptions{nullptr}, &inputName, &inputTensor, 1, &outputName, 1);
-    assert(outputTensor.size() == 1 && outputTensor.front().IsTensor());
-    std::vector<int64_t> outputShape = outputTensor[0].GetTensorTypeAndShapeInfo().GetShape();
-    int64_t outputCount = std::accumulate(outputShape.begin(), outputShape.end(), 1,
-                                          std::multiplies<int64_t>());
-    float *floatArray = outputTensor.front().GetTensorMutableData<float>();
-
-    //-----Data preparation-----
-    cv::Mat fMapMat(srcResize.rows, srcResize.cols, CV_32FC1);
-    memcpy(fMapMat.data, floatArray, size_t(outputCount * sizeof(float)));
-
-    //-----boxThresh-----
-    cv::Mat norfMapMat;
-    norfMapMat = fMapMat > boxThresh;
-
-    return findRsBoxes(fMapMat, norfMapMat, s, boxScoreThresh, unClipRatio);
-}
-*/
-
-std::string DbNet::getDebugImgFilePath(const char *path, const char *imgName, int i, const char *tag) {
-    std::string filePath;
-    filePath.append(path).append(imgName).append(tag).append(std::to_string(i)).append(".jpg");
-    return filePath;
-}
-
-std::vector<cv::Mat> DbNet::getPartImages(cv::Mat &src, std::vector<types::TextBox> &textBoxes) {
-    std::vector<cv::Mat> partImages;
-    for (int i = 0; i < textBoxes.size(); ++i) {
-        cv::Mat partImg = getRotateCropImage(src, textBoxes[i].boxPoint);
-        partImages.emplace_back(partImg);
-        // //OutPut DebugImg
-        if (true) {
-            std::string debugImgFile = getDebugImgFilePath("", "hh", i, "-part-");
-            saveImg(partImg, debugImgFile.c_str());
-        }
-    }
-    return partImages;
+    ort::getInputName(session, inputName);
+    ort::getOutputName(session, outputName);
 }
 
 std::vector<cv::Mat>
@@ -171,22 +76,30 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
     op::ResizeByMaxSide(dst_padding,dst_resize,maxSideLen,ratio_wh);
     
     //inference
+    // std::cout<<outputName<<std::endl;
+    // std::vector<int64_t> outputShape;
+    // int64_t outputCount;
+    // float* floatArray;
+    // ort::ModelInference(session, inputName, outputName,
+    //                 dst_resize,meanValues, normValues,
+    //                 floatArray,outputShape, outputCount);
     std::vector<float> inputTensorValues;
+
     op::MeanNormalize(dst_resize,meanValues, normValues,inputTensorValues);
 
     std::array<int64_t, 4> inputShape{1, dst_resize.channels(), dst_resize.rows, dst_resize.cols};
-    auto memoryInfo = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
-    Ort::Value inputTensor = Ort::Value::CreateTensor<float>(memoryInfo, inputTensorValues.data(),
+    auto memoryInfo(Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU));
+    Ort::Value inputTensor(Ort::Value::CreateTensor<float>(memoryInfo, inputTensorValues.data(),
                                                              inputTensorValues.size(), inputShape.data(),
-                                                             inputShape.size());
+                                                             inputShape.size()));
     assert(inputTensor.IsTensor());
-    auto outputTensor = session->Run(Ort::RunOptions{nullptr}, &inputName, &inputTensor, 1, &outputName, 1);
+    auto outputTensor(session->Run(Ort::RunOptions{nullptr}, &inputName, &inputTensor, 1, &outputName, 1));
     assert(outputTensor.size() == 1 && outputTensor.front().IsTensor());
     std::vector<int64_t> outputShape = outputTensor[0].GetTensorTypeAndShapeInfo().GetShape();
     int64_t outputCount = std::accumulate(outputShape.begin(), outputShape.end(), 1,
                                           std::multiplies<int64_t>());
     float *floatArray = outputTensor.front().GetTensorMutableData<float>();
-
+    
     //-----Data preparation-----
     cv::Mat fMapMat(dst_resize.rows, dst_resize.cols, CV_32FC1);
     memcpy(fMapMat.data, floatArray, size_t(outputCount * sizeof(float)));
@@ -206,7 +119,7 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
     
     float minArea = 3;
     // resize图像的坐标点信息
-    std::vector<types::TextBox> rsBoxes;
+    std::vector<types::BoxInfo> rsBoxes;
     rsBoxes.clear();
 
     std::vector<std::vector<cv::Point>> contours;
@@ -241,7 +154,7 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
             clipMinBox[j].y = clipMinBox[j].y / ratio_wh[1];
             clipMinBox[j].y = (std::min)((std::max)(clipMinBox[j].y, 0), int(dst_resize.rows/ratio_wh[1]));
         }
-        rsBoxes.insert(rsBoxes.begin(),types::TextBox{clipMinBox, score});
+        rsBoxes.insert(rsBoxes.begin(),types::BoxInfo{clipMinBox, score});
     }
    
     // 输出所有的数据
@@ -258,7 +171,7 @@ DbNet::Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, flo
 
     //---------- getPartImages ----------
     // 获取resize后图像的box
-    std::vector<cv::Mat> partImages = getPartImages(dst_resize, rsBoxes);
+    std::vector<cv::Mat> partImages = image::getPartImages(dst_resize, rsBoxes);
 
 
     //Save result.jpg

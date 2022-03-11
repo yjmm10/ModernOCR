@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-09 15:44:24
- * @LastEditTime: 2022-03-10 17:46:43
+ * @LastEditTime: 2022-03-11 10:59:03
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\utils\operators.h
@@ -12,6 +12,8 @@
 
 #include <opencv2/core.hpp>
 #include <vector>
+#include "types.h"
+
 namespace op
 {
     void SetPadding(cv::Mat &src, cv::Mat &dst, const int padding);
@@ -24,6 +26,11 @@ namespace op
     void GetMinBoxes(const std::vector<cv::Point> &inVec, float &minSideLen, float &allEdgeSize,std::vector<cv::Point>& minBoxVec);
     void BoxScoreFast(const cv::Mat &inMat, const std::vector<cv::Point> &inBox,float& score);
     void UnClip(const std::vector<cv::Point> &inBox, float perimeter, float unClipRatio,std::vector<cv::Point>& outBox);
+
+    cv::Mat ResizeByValue(cv::Mat &src, int dstWidth, int dstHeight);
+    std::vector<int> GetAngleIndexes(std::vector<types::AngleInfo> &angles);
+
+    void ResizeBySize(const cv::Mat &src, cv::Mat &dst, int dstWidth, int dstHeight);
 
 } // namespace op
 

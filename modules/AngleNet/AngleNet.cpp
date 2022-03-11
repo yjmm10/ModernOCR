@@ -1,7 +1,11 @@
-#include "AngleNet.h"
-#include "utils/OcrUtils.h"
 #include <numeric>
-#include "utils/operators.h"
+#include "AngleNet.h"
+
+
+// // #include "AngleNet.h"
+// // #include "utils/OcrUtils.h"
+// #include <numeric>
+// // #include "utils/operators.h"
 
 AngleNet::AngleNet() {}
 
@@ -34,29 +38,16 @@ void AngleNet::setNumThread(int numOfThread) {
 
 void AngleNet::initModel(const std::string &pathStr) {
 #ifdef _WIN32
-    std::wstring anglePath = strToWstr(pathStr);
+    std::wstring anglePath = str::strToWstr(pathStr);
     session = new Ort::Session(env, anglePath.c_str(), sessionOptions);
 #else
     session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
 #endif
-    getInputName(session,inputName);
-    getOutputName(session,outputName);
+    ort::getInputName(session,inputName);
+    ort::getOutputName(session,outputName);
 }
 
-Angle scoreToAngle(const std::vector<float> &outputData) {
-    int maxIndex = 0;
-    float maxScore = -1000.0f;
-    for (int i = 0; i < outputData.size(); i++) {
-        if (i == 0)maxScore = outputData[i];
-        else if (outputData[i] > maxScore) {
-            maxScore = outputData[i];
-            maxIndex = i;
-        }
-    }
-    return {maxIndex, maxScore};
-}
-
-Angle AngleNet::getAngle(cv::Mat &src) {
+types::AngleInfo AngleNet::getAngle(cv::Mat &src) {
 
     std::vector<float> inputTensorValues;
     op::MeanNormalize(src, meanValues, normValues,inputTensorValues);
@@ -81,38 +72,43 @@ Angle AngleNet::getAngle(cv::Mat &src) {
 
     float *floatArray = outputTensor.front().GetTensorMutableData<float>();
     std::vector<float> outputData(floatArray, floatArray + outputCount);
-    return scoreToAngle(outputData);
+
+    return {std::max_element(outputData.begin(),outputData.end()) - outputData.begin(),float(*std::max_element(outputData.begin(),outputData.end()))};
 }
 
-std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const char *path,
+std::vector<types::AngleInfo> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                        const char *imgName, bool doAngle, bool mostAngle) {
     // assert(!partImgs.isempty());
     int size = partImgs.size();
-    std::vector<Angle> angles(size);
+    std::vector<types::AngleInfo> angles(size);
     if (doAngle) {
         for (int i = 0; i < size; ++i) {
-            double startAngle = getCurrentTime();
-            auto angleImg = adjustTargetImg(partImgs[i], dstWidth, dstHeight);
-            Angle angle = getAngle(angleImg);
-            double endAngle = getCurrentTime();
+            //preprocess
+            double startAngle = utils::getCurrentTime();
+            auto angleImg = op::ResizeByValue(partImgs[i], dstWidth, dstHeight);
+
+            //inference
+            // 模型推理
+            types::AngleInfo angle = getAngle(angleImg);
+            double endAngle = utils::getCurrentTime();
             angle.time = endAngle - startAngle;
 
             angles[i] = angle;
 
             //OutPut AngleImg
             if (isOutputAngleImg) {
-                std::string angleImgFile = getDebugImgFilePath(path, imgName, i, "-angle-");
-                saveImg(angleImg, angleImgFile.c_str());
+                std::string angleImgFile = image::getDebugImgFilePath(path, imgName, i, "-angle-");
+                image::saveImg(angleImg, angleImgFile.c_str());
             }
         }
     } else {
         for (int i = 0; i < size; ++i) {
-            angles[i] = Angle{-1, 0.f};
+            angles[i] = types::AngleInfo{-1, 0.f,0.f};
         }
     }
     //Most Possible AngleIndex
     if (doAngle && mostAngle) {
-        auto angleIndexes = getAngleIndexes(angles);
+        auto angleIndexes = op::GetAngleIndexes(angles);
         double sum = std::accumulate(angleIndexes.begin(), angleIndexes.end(), 0.0);
         double halfPercent = angles.size() / 2.0f;
         int mostAngleIndex;
@@ -123,7 +119,7 @@ std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const cha
         }
         printf("Set All Angle to mostAngleIndex(%d)\n", mostAngleIndex);
         for (int i = 0; i < angles.size(); ++i) {
-            Angle angle = angles[i];
+            types::AngleInfo angle = angles[i];
             angle.index = mostAngleIndex;
             angles.at(i) = angle;
         }

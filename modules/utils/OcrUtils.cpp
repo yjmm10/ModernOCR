@@ -3,7 +3,7 @@
 #include <numeric>
 #include "OcrUtils.h"
 #include "clipper.hpp"
-
+#include "utils/types.h"
 double getCurrentTime() {
     return (static_cast<double>(cv::getTickCount())) / cv::getTickFrequency() * 1000;//单位毫秒
 }
@@ -316,14 +316,14 @@ std::vector<float> substractMeanNormalize(cv::Mat &src, const float *meanVals, c
     return inputTensorValues;
 }
 
-std::vector<int> getAngleIndexes(std::vector<Angle> &angles) {
-    std::vector<int> angleIndexes;
-    angleIndexes.reserve(angles.size());
-    for (int i = 0; i < angles.size(); ++i) {
-        angleIndexes.push_back(angles[i].index);
-    }
-    return angleIndexes;
-}
+// std::vector<int> getAngleIndexes(std::vector<types::AngleInfo> &angles) {
+//     std::vector<int> angleIndexes;
+//     angleIndexes.reserve(angles.size());
+//     for (int i = 0; i < angles.size(); ++i) {
+//         angleIndexes.push_back(angles[i].index);
+//     }
+//     return angleIndexes;
+// }
 
 std::vector<char *> getInputNames(Ort::Session *session) {
     Ort::AllocatorWithDefaultOptions allocator;
