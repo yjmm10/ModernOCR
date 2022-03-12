@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 17:27:29
- * @LastEditTime: 2022-03-11 16:44:59
+ * @LastEditTime: 2022-03-12 11:44:43
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\DbNet\DbNet.h
@@ -25,7 +25,7 @@ public:
     void setNumThread(int numOfThread);
     bool LoadModel(const std::string &modelPath);
 
-    void initModel(const std::string &pathStr);
+    // void initModel(const std::string &pathStr);
 
     std::vector<cv::Mat> Run(cv::Mat &src, int padding, float boxScoreThresh, float boxThresh, float unClipRatio, int maxSideLen);
 

@@ -2,8 +2,20 @@
 // #include "utils/OcrUtils.h"
 #include <fstream>
 #include <numeric>
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 // #include <utils/operators.h>
-CrnnNet::CrnnNet() {}
+CrnnNet::CrnnNet() {
+    const std::string modelName("CrnnNet");
+    log = spdlog::get(modelName);
+    if(log==nullptr)
+    {
+        log = spdlog::basic_logger_mt(modelName, "logs/ModernOCR.log");
+        log->info("Create {} logs!",modelName);
+    }else{
+        log->info("Load {} logs!",modelName);
+    }
+}
 
 CrnnNet::~CrnnNet() {
     delete session;
@@ -30,6 +42,42 @@ void CrnnNet::setNumThread(int numOfThread) {
     // ORT_ENABLE_EXTENDED -> To enable extended optimizations (Includes level 1 + more complex optimizations like node fusions)
     // ORT_ENABLE_ALL -> To Enable All possible opitmizations
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
+}
+
+bool CrnnNet::LoadModel(const std::string &modelPath, const std::string &keysPath){
+try
+{
+#ifdef _WIN32
+    std::wstring crnnPath = str::strToWstr(modelPath);
+    session = new Ort::Session(env, crnnPath.c_str(), sessionOptions);
+#else
+    session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
+#endif
+    log->info("CrnnNet Model[{}] successfully loaded!",modelPath);
+}
+catch(const std::exception& e)
+{
+    SPDLOG_LOGGER_ERROR(log,e.what());
+}
+    ort::getInputName(session, inputName);
+    ort::getOutputName(session, outputName);
+
+    //load keys
+    std::ifstream in(keysPath.c_str());
+    std::string line;
+    if (in) 
+        while (getline(in, line))   keys.push_back(line);   // line中不包括每行的换行符
+    else {
+        log->warn("Key of CrnnNet[{}] not found!",keysPath);
+        return false;
+    }
+    const int num_keys = 5531;
+    if (keys.size() != 5531) {
+        log->warn("Key of CrnnNet[{}] not matched {}!",keys.size(),num_keys);
+        return false;
+    }
+    log->info("Key of CrnnNet[{}] has {} keys!",keysPath,num_keys);
+    return true;
 }
 
 void CrnnNet::initModel(const std::string &pathStr, const std::string &keysPath) {

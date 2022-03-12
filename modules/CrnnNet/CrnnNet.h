@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 17:27:29
- * @LastEditTime: 2022-03-11 14:03:35
+ * @LastEditTime: 2022-03-12 12:08:45
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\CrnnNet\CrnnNet.h
@@ -13,6 +13,7 @@
 #include "core/modernocr.h"
 using namespace ModernOCR;
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <spdlog/spdlog.h>
 // #include <opencv2/opencv.hpp>
 class CrnnNet {
 public:
@@ -24,10 +25,12 @@ public:
     void setNumThread(int numOfThread);
 
     void initModel(const std::string &pathStr, const std::string &keysPath);
+    bool LoadModel(const std::string &modelPath, const std::string &keysPath);
 
     std::vector<types::RecInfo> getTextLines(std::vector<cv::Mat> &partImg, const char *path, const char *imgName);
 
 private:
+    std::shared_ptr<spdlog::logger> log;
     bool isOutputDebugImg = false;
     Ort::Session *session;
     Ort::Env env = Ort::Env(ORT_LOGGING_LEVEL_ERROR, "CrnnNet");

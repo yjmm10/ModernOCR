@@ -1,13 +1,24 @@
 #include <numeric>
 #include "AngleNet.h"
 
-
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 // // #include "AngleNet.h"
 // // #include "utils/OcrUtils.h"
 // #include <numeric>
 // // #include "utils/operators.h"
 
-AngleNet::AngleNet() {}
+AngleNet::AngleNet() {
+    const std::string modelName("AngleNet");
+    log = spdlog::get(modelName);
+    if(log==nullptr)
+    {
+        log = spdlog::basic_logger_mt(modelName, "logs/ModernOCR.log");
+        log->info("Create {} logs!",modelName);
+    }else{
+        log->info("Load {} logs!",modelName);
+    }
+}
 
 AngleNet::~AngleNet() {
     delete session;
@@ -36,16 +47,36 @@ void AngleNet::setNumThread(int numOfThread) {
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
 }
 
-void AngleNet::initModel(const std::string &pathStr) {
+bool AngleNet::LoadModel(const std::string &modelPath) {
+try
+{
 #ifdef _WIN32
-    std::wstring anglePath = str::strToWstr(pathStr);
-    session = new Ort::Session(env, anglePath.c_str(), sessionOptions);
+    std::wstring dbPath = str::strToWstr(modelPath);
+    session = new Ort::Session(env, dbPath.c_str(), sessionOptions);
 #else
-    session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
+    session = new Ort::Session(env, modelPath.c_str(), sessionOptions);
 #endif
-    ort::getInputName(session,inputName);
-    ort::getOutputName(session,outputName);
+    log->info("AngleNet Model[{}] successfully loaded!",modelPath);
 }
+catch(const std::exception& e)
+{
+    SPDLOG_LOGGER_ERROR(log,e.what());
+}
+    ort::getInputName(session, inputName);
+    ort::getOutputName(session, outputName);
+    return true;
+}
+
+// void AngleNet::initModel(const std::string &pathStr) {
+// #ifdef _WIN32
+//     std::wstring anglePath = str::strToWstr(pathStr);
+//     session = new Ort::Session(env, anglePath.c_str(), sessionOptions);
+// #else
+//     session = new Ort::Session(env, pathStr.c_str(), sessionOptions);
+// #endif
+//     ort::getInputName(session,inputName);
+//     ort::getOutputName(session,outputName);
+// }
 
 types::AngleInfo AngleNet::getAngle(cv::Mat &src) {
 

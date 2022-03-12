@@ -184,10 +184,11 @@ int main(int argc, char **argv) {
             numThread, padding, maxSideLen, boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
 
     ocrLite.initModels(modelDetPath, modelClsPath, modelRecPath, keysPath);
-
-    types::OcrResult result = ocrLite.detect_new(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
-                                      boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
-    ocrLite.Logger("%s\n", result.strRes.c_str());
+    // while(1){
+        types::OcrResult result = ocrLite.detect_new(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
+                                        boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
+        ocrLite.Logger("%s\n", result.strRes.c_str());
+    // }
     return 0;
 }
 

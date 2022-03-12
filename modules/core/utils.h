@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-11 11:42:06
- * @LastEditTime: 2022-03-11 18:14:12
+ * @LastEditTime: 2022-03-12 11:36:51
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\core\utils.h
@@ -27,7 +27,7 @@ namespace ModernOCR {
             std::string result="";
             for (int i = 0; i < rsBoxes.size(); ++i) {
                 char info[1024];
-                std::sprintf(info,"BoxInfo(after padding)[%d][score:%f, pos:(%d, %d), (%d, %d), (%d, %d), (%d, %d)]\n", i,
+                std::sprintf(info,"BoxInfo(after padding)[%d][score:%.3f, pos:(%d, %d), (%d, %d), (%d, %d), (%d, %d)]\n", i,
                    rsBoxes[i].score,
                    rsBoxes[i].boxPoint[0].x, rsBoxes[i].boxPoint[0].y,
                    rsBoxes[i].boxPoint[1].x, rsBoxes[i].boxPoint[1].y,

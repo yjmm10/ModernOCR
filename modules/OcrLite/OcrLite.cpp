@@ -40,13 +40,13 @@ bool OcrLite::initModels(const std::string &detPath, const std::string &clsPath,
                          const std::string &recPath, const std::string &keysPath) {
     Logger("=====Init Models=====\n");
     Logger("--- Init DbNet ---\n");
-    dbNet.initModel(detPath);
+    dbNet.LoadModel(detPath);
 
     Logger("--- Init AngleNet ---\n");
-    angleNet.initModel(clsPath);
+    angleNet.LoadModel(clsPath);
 
     Logger("--- Init CrnnNet ---\n");
-    crnnNet.initModel(recPath, keysPath);
+    crnnNet.LoadModel(recPath, keysPath);
 
     Logger("Init Models Success!\n");
     return true;

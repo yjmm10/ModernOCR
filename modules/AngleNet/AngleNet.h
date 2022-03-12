@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 13:22:18
- * @LastEditTime: 2022-03-11 14:00:43
+ * @LastEditTime: 2022-03-12 11:59:18
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\AngleNet\AngleNet.h
@@ -13,6 +13,7 @@
 // #include <utils/types.h>
 // #include "utils/OcrStruct.h"
 #include "core/modernocr.h"
+#include <spdlog/spdlog.h>
 using namespace ModernOCR;
 
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
@@ -27,12 +28,14 @@ public:
 
     void setNumThread(int numOfThread);
 
-    void initModel(const std::string &pathStr);
+    // void initModel(const std::string &pathStr);
+    bool LoadModel(const std::string &modelPath);
 
     std::vector<types::AngleInfo> getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                  const char *imgName, bool doAngle, bool mostAngle);
 
 private:
+    std::shared_ptr<spdlog::logger> log;
     bool isOutputAngleImg = false;
 
     Ort::Session *session;
