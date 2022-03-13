@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 23:34:29
- * @LastEditTime: 2022-03-11 14:31:51
+ * @LastEditTime: 2022-03-13 13:03:54
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\core\types.h
@@ -61,6 +61,23 @@ namespace ModernOCR{
             cv::Mat boxImg;
             double detectTime;
             std::string strRes;
+        };
+
+        struct DbNetParam{
+            int padding;
+            float boxScoreThresh;
+            float boxThresh;
+            float unClipRatio;
+            int maxSideLen;
+            
+            bool operator==(const DbNetParam& params)
+            {
+                return (padding == params.padding) && (boxScoreThresh == params.boxScoreThresh) && (boxThresh==params.boxThresh)&&(unClipRatio==params.unClipRatio)&&(maxSideLen==params.maxSideLen);
+            };
+        };
+        struct DetResult {
+            std::vector<BoxInfo> allBoxInfo;
+            double time;
         };
 
 

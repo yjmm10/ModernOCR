@@ -1,12 +1,9 @@
 #include "OcrLite.h"
-// #include "utils/OcrUtils.h"
 #include <stdarg.h> //windows&linux
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-// #include "utils/operators.h"
-// #include "utils/types.h"
-// test
+
 #include <string>
 
 OcrLite::OcrLite() {}
@@ -301,7 +298,14 @@ types::OcrResult OcrLite::detect_new(const char *path, const char *imgName,
     Logger("---------- step: dbNet getTextBoxes ----------\n");
     double startTime = utils::GetCurrentTime();
     // std::vector<TextBox> textBoxes 
-    std::vector<cv::Mat> partImages = dbNet.Run(dst_resize, padding, boxScoreThresh, boxThresh, unClipRatio,maxSideLen);
+    types::DbNetParam dbnetParam;
+    dbnetParam.padding=padding; 
+    dbnetParam.boxScoreThresh=boxScoreThresh;
+    dbnetParam.boxThresh=boxThresh;
+    dbnetParam.unClipRatio=unClipRatio;
+    dbnetParam.maxSideLen=maxSideLen;
+    // dbNet.Run(dst_resize, padding, boxScoreThresh, boxThresh, unClipRatio,maxSideLen);
+    std::vector<cv::Mat> partImages = dbNet.Run(dst_resize, dbnetParam);
     double endDbNetTime = utils::GetCurrentTime();
     double dbNetTime = endDbNetTime - startTime;
     Logger("dbNetTime(%fms)\n", dbNetTime);
