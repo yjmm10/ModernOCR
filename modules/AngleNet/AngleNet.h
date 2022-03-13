@@ -1,7 +1,7 @@
 /*
  * @Author: Petrichor
  * @Date: 2022-03-07 13:22:18
- * @LastEditTime: 2022-03-12 11:59:18
+ * @LastEditTime: 2022-03-14 00:48:06
  * @LastEditors: Petrichor
  * @Description:  
  * @FilePath: \ModernOCR\modules\AngleNet\AngleNet.h
@@ -31,11 +31,20 @@ public:
     // void initModel(const std::string &pathStr);
     bool LoadModel(const std::string &modelPath);
 
+    // types::AngleResult AngleNet::Run(cv::Mat &src, bool doAngle, bool mostAngle);
     std::vector<types::AngleInfo> getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                  const char *imgName, bool doAngle, bool mostAngle);
 
 private:
+    const std::string _modelName = "AngelNet";
+    const std::string _version = "0.1.0";
     std::shared_ptr<spdlog::logger> log;
+    bool update = false;
+    // types::ClsNetParam params{};
+    // types::AngleResult detResult;
+    // std::vector<double> allTimes;
+    // std::vector<std::string> timesInfo{"preprocess","inference","postprocess","crop"};
+
     bool isOutputAngleImg = false;
 
     Ort::Session *session;

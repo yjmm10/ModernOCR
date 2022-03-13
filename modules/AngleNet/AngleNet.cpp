@@ -9,15 +9,12 @@
 // // #include "utils/operators.h"
 
 AngleNet::AngleNet() {
-    const std::string modelName("AngleNet");
-    log = spdlog::get(modelName);
+    log = spdlog::get(_modelName);
     if(log==nullptr)
     {
-        log = spdlog::basic_logger_mt(modelName, "logs/ModernOCR.log");
-        log->info("Create {} logs!",modelName);
-    }else{
-        log->info("Load {} logs!",modelName);
+        log = spdlog::basic_logger_mt(_modelName, "logs/ModernOCR.log");
     }
+    log->info("{} Version: {} !", _modelName, _version);
 }
 
 AngleNet::~AngleNet() {
@@ -56,7 +53,7 @@ try
 #else
     session = new Ort::Session(env, modelPath.c_str(), sessionOptions);
 #endif
-    log->info("AngleNet Model[{}] successfully loaded!",modelPath);
+    log->info("{} Model[{}] successfully loaded!", _modelName, modelPath);
 }
 catch(const std::exception& e)
 {
@@ -107,6 +104,76 @@ types::AngleInfo AngleNet::getAngle(cv::Mat &src) {
     return {std::max_element(outputData.begin(),outputData.end()) - outputData.begin(),float(*std::max_element(outputData.begin(),outputData.end()))};
 }
 
+/*
+types::AngleResult AngleNet::Run(std::vector<cv::Mat> &src, bool doAngle, bool mostAngle){
+    double clsStartTime = utils::GetCurrentTime();
+    auto angleImg = op::ResizeByValue(src, dstWidth, dstHeight);
+    double preprocessTime = utils::GetCurrentTime() - clsStartTime;
+    log->debug("Preprocess: [src_wh: ({},{}), resize_wh: ({},{}), cost {:.5} s].",
+                            src.cols,src.rows,angleImg.cols,angleImg.rows,
+                            preprocessTime);
+    double inferenceTime = utils::GetCurrentTime();
+    types::AngleInfo angle = getAngle(angleImg);
+    double inferenceTime = utils::GetCurrentTime() - startAngle;
+    log->debug("Inference: [cost {:.5} s].", inferenceTime);
+
+// assert(!partImgs.isempty());
+    int size = src.size();
+    std::vector<types::AngleInfo> angles(size);
+    if (doAngle) {
+        for (int i = 0; i < size; ++i) {
+            //preprocess
+            double startAngle = utils::GetCurrentTime();
+            auto angleImg = op::ResizeByValue(src[i], dstWidth, dstHeight);
+            double preprocessTime = utils::GetCurrentTime() - startAngle;
+            log->debug("Preprocess: [src_wh: ({},{}), resize_wh: ({},{}), cost {:.5} s].",
+                            src[i].cols,src[i].rows,angleImg.cols,angleImg.rows,
+                            preprocessTime);
+            
+            //inference
+            // 模型推理
+            startAngle = utils::GetCurrentTime();
+            types::AngleInfo angle = getAngle(angleImg);
+            double inferenceTime = utils::GetCurrentTime() - startAngle;
+            log->debug("Inference: [cost {:.5} s].", inferenceTime);
+
+            angles[i] = angle;
+
+            // //OutPut AngleImg
+            // if (isOutputAngleImg) {
+            //     std::string angleImgFile = image::getDebugImgFilePath(path, imgName, i, "-angle-");
+            //     image::saveImg(angleImg, angleImgFile.c_str());
+            // }
+        }
+    } else {
+        for (int i = 0; i < size; ++i) {
+            angles[i] = types::AngleInfo{-1, 0.f,0.f};
+        }
+    }
+    //Most Possible AngleIndex
+    if (doAngle && mostAngle) {
+        auto angleIndexes = op::GetAngleIndexes(angles);
+        double sum = std::accumulate(angleIndexes.begin(), angleIndexes.end(), 0.0);
+        double halfPercent = angles.size() / 2.0f;
+        int mostAngleIndex;
+        if (sum < halfPercent) {//all angle set to 0
+            mostAngleIndex = 0;
+        } else {//all angle set to 1
+            mostAngleIndex = 1;
+        }
+        printf("Set All Angle to mostAngleIndex(%d)\n", mostAngleIndex);
+        for (int i = 0; i < angles.size(); ++i) {
+            types::AngleInfo angle = angles[i];
+            angle.index = mostAngleIndex;
+            angles.at(i) = angle;
+        }
+    }
+
+    return angles;
+
+}
+
+*/
 std::vector<types::AngleInfo> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const char *path,
                                        const char *imgName, bool doAngle, bool mostAngle) {
     // assert(!partImgs.isempty());
@@ -117,12 +184,17 @@ std::vector<types::AngleInfo> AngleNet::getAngles(std::vector<cv::Mat> &partImgs
             //preprocess
             double startAngle = utils::GetCurrentTime();
             auto angleImg = op::ResizeByValue(partImgs[i], dstWidth, dstHeight);
-
+            double preprocessTime = utils::GetCurrentTime() - startAngle;
+                log->debug("Preprocess: [src_wh: ({},{}), resize_wh: ({},{}), cost {:.5} s].",
+                            partImgs[i].cols,partImgs[i].rows,angleImg.cols,angleImg.rows,
+                            preprocessTime);
+                
             //inference
             // 模型推理
+            startAngle = utils::GetCurrentTime();
             types::AngleInfo angle = getAngle(angleImg);
-            double endAngle = utils::GetCurrentTime();
-            angle.time = endAngle - startAngle;
+            double inferenceTime = utils::GetCurrentTime() - startAngle;
+            log->debug("Inference: [cost {:.5} s].", inferenceTime);
 
             angles[i] = angle;
 
